@@ -1,0 +1,12 @@
+rule_id,cite,what,how_this_desk
+G2A,IRC 42(g)(2)(A),A unit is rent-restricted if gross rent does not exceed 30 percent of the imputed income limitation applicable to the unit.,monthly_max = floor(imputed_il * 0.30 / 12). Gross rent = tenant rent + utility allowance.
+G2C0,IRC 42(g)(2)(C)(i),Studio / no separate bedroom: impute 1 individual.,0 BR uses the 1-person limit at the elected AMI.
+G2C1,IRC 42(g)(2)(C)(ii),1 or more bedrooms: impute 1.5 individuals per bedroom.,1 BR=1.5p midpoint of 1- and 2-person; 2 BR=3p; 3 BR=4.5p midpoint of 4- and 5-person; 4 BR=6p.
+G2HOLD,IRC 42(g)(2)(A) 2d sentence,Imputed income limitation is never less than the limitation for the earliest period the building was in the qualified project.,Planning flag only. Pass --floor-il with a prior-year 4-person 50% (or any person size) to hold harmless. Not a BIN determination.
+IA,CAA 2018 sec. 103 / IRC 42(g)(1)(C),Income averaging: designated units 20–80% AMI in 10-point steps; average of designated units ≤ 60%; no designated unit > 80%.,--mix "2@30,6@60,2@80" prints the unit-weighted average and fail/pass.
+HERA,HERA 2008 / HUD MTSP HERA Special,HERA Special 50/60 limits apply only to projects placed in service in 2007 or 2008.,--hera swaps in HUD HERA_Lim_type26=Special columns. Regular projects must not use them.
+RURAL,IRC 42(i)(8),Rural projects (Housing Act of 1949 §520) may use the greater of area median or national non-metro median.,--rural takes max(area 50%, FY2026 national non-metro 50%) then scales AMI as (ami/50)×that 50% (HUD 120%-of-VLI method).
+UA,IRC 42(g)(2)(B),Gross rent includes a utility allowance when the tenant pays utilities.,Pass --ua. Asking tenant rent + UA is compared to monthly_max.
+SET20,IRC 42(g)(1)(A),20-50 minimum set-aside: ≥20% of units at 50% AMI.,Eligibility uses the 50% column.
+SET40,IRC 42(g)(1)(B),40-60 minimum set-aside: ≥40% of units at 60% AMI.,Eligibility uses the 60% column (published Lim60 = 120% of 50% except HUD rounding).
+PLAN,disclaimer,Not an IRS Form 8609 or state HFA determination.,Offline planning quotes only. Verify against the official HUD USER Excel and the allocating agency.
