@@ -1,0 +1,45 @@
+Field_Name,Description
+fips,"Concatenated 2 Digit State FIPS Code, 3 Digit County FIPS Code, and 5 Digit County Subdivision FIPS Code"
+stusps,State Postal Code
+state,2 Digit State FIPS Code
+state_name,State Name
+hud_area_code,HUD Specific Area Code
+HUD_Area_Name,HUD Area Name
+county,3 Digit County FIPS Code
+County_Name,County Name
+county_town_name,"Town Name for areas in New England (Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont)- Otherwise, County Name"
+metro,1 if area is in a Metropolitan Statistical Area- 0 if not
+median2026,2026 HUD Area Median Family Income
+lim50_26p1,2026 1-Person 50% Income Limit
+lim50_26p2,2026 2-Person 50% Income Limit
+lim50_26p3,2026 3-Person 50% Income Limit
+lim50_26p4,2026 4-Person 50% Income Limit
+lim50_26p5,2026 5-Person 50% Income Limit
+lim50_26p6,2026 6-Person 50% Income Limit
+lim50_26p7,2026 7-Person 50% Income Limit
+lim50_26p8,2026 8-Person 50% Income Limit
+lim60_26p1,2026 1-Person 60% Income Limit
+lim60_26p2,2026 2-Person 60% Income Limit
+lim60_26p3,2026 3-Person 60% Income Limit
+lim60_26p4,2026 4-Person 60% Income Limit
+lim60_26p5,2026 5-Person 60% Income Limit
+lim60_26p6,2026 6-Person 60% Income Limit
+lim60_26p7,2026 7-Person 60% Income Limit
+lim60_26p8,2026 8-Person 60% Income Limit
+HERA_Lim_type26,2026 HERA Limit Type (Special or Regular)
+lim50_HERA_26p1,2026 1-Person HERA Special 50% Income Limit
+lim50_HERA_26p2,2026 2-Person HERA Special 50% Income Limit
+lim50_HERA_26p3,2026 3-Person HERA Special 50% Income Limit
+lim50_HERA_26p4,2026 4-Person HERA Special 50% Income Limit
+lim50_HERA_26p5,2026 5-Person HERA Special 50% Income Limit
+lim50_HERA_26p6,2026 6-Person HERA Special 50% Income Limit
+lim50_HERA_26p7,2026 7-Person HERA Special 50% Income Limit
+lim50_HERA_26p8,2026 8-Person HERA Special 50% Income Limit
+lim60_HERA_26p1,2026 1-Person HERA Special 60% Income Limit
+lim60_HERA_26p2,2026 2-Person HERA Special 60% Income Limit
+lim60_HERA_26p3,2026 3-Person HERA Special 60% Income Limit
+lim60_HERA_26p4,2026 4-Person HERA Special 60% Income Limit
+lim60_HERA_26p5,2026 5-Person HERA Special 60% Income Limit
+lim60_HERA_26p6,2026 6-Person HERA Special 60% Income Limit
+lim60_HERA_26p7,2026 7-Person HERA Special 60% Income Limit
+lim60_HERA_26p8,2026 8-Person HERA Special 60% Income Limit
