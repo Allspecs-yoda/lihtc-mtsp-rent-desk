@@ -1,0 +1,67 @@
+Field_Name,Description
+fips,"Concatenated 2 Digit State FIPS Code, 3 Digit County FIPS Code, and 5 Digit County Subdivision FIPS Code"
+stusps,State Postal Code
+state_name,State Name
+state,2 Digit State FIPS Code
+county,3 Digit County FIPS Code
+County_Name,County Name
+county_town_name,"Town Name for areas in New England (Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, Vermont)- Otherwise, County Name"
+hud_area_code,HUD Specific Area Code
+HUD_Area_Name,HUD Area Name
+metro,1 if area is in a Metropolitan Statistical Area- 0 if not
+lim20_IA_26p1,2026 1-Person 20% Income Averaging Limit
+lim20_IA_26p2,2026 2-Person 20% Income Averaging Limit
+lim20_IA_26p3,2026 3-Person 20% Income Averaging Limit
+lim20_IA_26p4,2026 4-Person 20% Income Averaging Limit
+lim20_IA_26p5,2026 5-Person 20% Income Averaging Limit
+lim20_IA_26p6,2026 6-Person 20% Income Averaging Limit
+lim20_IA_26p7,2026 7-Person 20% Income Averaging Limit
+lim20_IA_26p8,2026 8-Person 20% Income Averaging Limit
+lim30_IA_26p1,2026 1-Person 30% Income Averaging Limit
+lim30_IA_26p2,2026 2-Person 30% Income Averaging Limit
+lim30_IA_26p3,2026 3-Person 30% Income Averaging Limit
+lim30_IA_26p4,2026 4-Person 30% Income Averaging Limit
+lim30_IA_26p5,2026 5-Person 30% Income Averaging Limit
+lim30_IA_26p6,2026 6-Person 30% Income Averaging Limit
+lim30_IA_26p7,2026 7-Person 30% Income Averaging Limit
+lim30_IA_26p8,2026 8-Person 30% Income Averaging Limit
+lim40_IA_26p1,2026 1-Person 40% Income Averaging Limit
+lim40_IA_26p2,2026 2-Person 40% Income Averaging Limit
+lim40_IA_26p3,2026 3-Person 40% Income Averaging Limit
+lim40_IA_26p4,2026 4-Person 40% Income Averaging Limit
+lim40_IA_26p5,2026 5-Person 40% Income Averaging Limit
+lim40_IA_26p6,2026 6-Person 40% Income Averaging Limit
+lim40_IA_26p7,2026 7-Person 40% Income Averaging Limit
+lim40_IA_26p8,2026 8-Person 40% Income Averaging Limit
+lim50_26p1,2026 1-Person 50% Income Limit
+lim50_26p2,2026 2-Person 50% Income Limit
+lim50_26p3,2026 3-Person 50% Income Limit
+lim50_26p4,2026 4-Person 50% Income Limit
+lim50_26p5,2026 5-Person 50% Income Limit
+lim50_26p6,2026 6-Person 50% Income Limit
+lim50_26p7,2026 7-Person 50% Income Limit
+lim50_26p8,2026 8-Person 50% Income Limit
+lim60_26p1,2026 1-Person 60% Income Limit
+lim60_26p2,2026 2-Person 60% Income Limit
+lim60_26p3,2026 3-Person 60% Income Limit
+lim60_26p4,2026 4-Person 60% Income Limit
+lim60_26p5,2026 5-Person 60% Income Limit
+lim60_26p6,2026 6-Person 60% Income Limit
+lim60_26p7,2026 7-Person 60% Income Limit
+lim60_26p8,2026 8-Person 60% Income Limit
+lim70_IA_26p1,2026 1-Person 70% Income Averaging Limit
+lim70_IA_26p2,2026 2-Person 70% Income Averaging Limit
+lim70_IA_26p3,2026 3-Person 70% Income Averaging Limit
+lim70_IA_26p4,2026 4-Person 70% Income Averaging Limit
+lim70_IA_26p5,2026 5-Person 70% Income Averaging Limit
+lim70_IA_26p6,2026 6-Person 70% Income Averaging Limit
+lim70_IA_26p7,2026 7-Person 70% Income Averaging Limit
+lim70_IA_26p8,2026 8-Person 70% Income Averaging Limit
+lim80_IA_26p1,2026 1-Person 80% Income Averaging Limit
+lim80_IA_26p2,2026 2-Person 80% Income Averaging Limit
+lim80_IA_26p3,2026 3-Person 80% Income Averaging Limit
+lim80_IA_26p4,2026 4-Person 80% Income Averaging Limit
+lim80_IA_26p5,2026 5-Person 80% Income Averaging Limit
+lim80_IA_26p6,2026 6-Person 80% Income Averaging Limit
+lim80_IA_26p7,2026 7-Person 80% Income Averaging Limit
+lim80_IA_26p8,2026 8-Person 80% Income Averaging Limit
