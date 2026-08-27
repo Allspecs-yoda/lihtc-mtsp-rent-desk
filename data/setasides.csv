@@ -1,0 +1,4 @@
+code,name,cite,min_units_pct,ami_cap,notes
+20-50,20 percent at 50 percent,IRC 42(g)(1)(A),20,50,Use HUD 50% (very-low) MTSP columns.
+40-60,40 percent at 60 percent,IRC 42(g)(1)(B),40,60,Use HUD published 60% columns (120% of 50%).
+averaging,income averaging,IRC 42(g)(1)(C) / CAA 2018 §103,40,80,Designated units 20–80 in 10-pt steps; unit-weighted average ≤ 60; no unit > 80. Use MTSP-IncAvg-Data-FY26 (updated 2026-05-18 to remove rounding from non-50% limits).
