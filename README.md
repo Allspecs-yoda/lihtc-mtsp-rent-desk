@@ -33,7 +33,7 @@ No API keys. No network after download.
 
 ## Price
 
-$49 USD. Unlimited non-exclusive buyers; copies may be resold. Pay (Stripe link after create) then open a GitHub issue titled `CLAIM: LIHTC MTSP Rent Desk` with the receipt last-4. If checkout is down, star + watch and open the same CLAIM issue.
+$49 USD. Unlimited non-exclusive buyers; copies may be resold. Pay https://buy.stripe.com/5kQcN65pC7Z1aRQ9A9cIE08 then open a GitHub issue titled `CLAIM: LIHTC MTSP Rent Desk` with the receipt last-4. If checkout is down, star + watch and open the same CLAIM issue.
 
 ## License
 
