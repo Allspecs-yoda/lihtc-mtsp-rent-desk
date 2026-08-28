@@ -15,6 +15,10 @@ No network. No API keys. Planning only — not an HFA / 8609 determination.
   python3 desk/quote.py --rules
   python3 desk/quote.py --ua-ladder
   python3 desk/quote.py --county Autauga --state AL --br 2 --ami 60 --floor-il 54000 --ua-method PHA
+  python3 desk/quote.py --qct 01001021000
+  python3 desk/quote.py --zcta 35213
+  python3 desk/quote.py --boost --county Autauga --state AL --qct 01001021000 --eligible-basis 10000000
+  python3 desk/quote.py --lost-qct AL
 """
 
 from __future__ import annotations
@@ -22,6 +26,7 @@ from __future__ import annotations
 import argparse
 import csv
 import gzip
+import re
 import sys
 from pathlib import Path
 
@@ -46,6 +51,10 @@ UA_METHODS = (
 # IRC 42(g)(2)(C): 0 BR → 1 person; n BR → 1.5 n persons.
 # Fractional persons use the midpoint of the two HUD household-size columns.
 BR_PERSONS = {0: 1.0, 1: 1.5, 2: 3.0, 3: 4.5, 4: 6.0, 5: 7.5, 6: 9.0}
+
+# IRC 42(d)(5)(B)(i): QCT or DDA may increase eligible basis (new construction / rehab, not land) by 30%.
+# This does **not** raise 42(g)(2) rent maxes.
+BASIS_BOOST = 1.30
 
 
 def money(n: float) -> str:
@@ -83,6 +92,10 @@ def load_plain(name: str) -> list[dict]:
 _LIMITS: list[dict] | None = None
 _IA: list[dict] | None = None
 _NNM: dict | None = None
+_QCT26: dict[str, dict] | None = None
+_QCT25: dict[str, dict] | None = None
+_DDA_ZCTA: dict[str, list[dict]] | None = None
+_DDA_NM: list[dict] | None = None
 
 
 def limits() -> list[dict]:
@@ -105,6 +118,138 @@ def nnm() -> dict:
         rows = load_plain("national_nonmetro.csv")
         _NNM = rows[0]
     return _NNM
+
+
+def qct26() -> dict[str, dict]:
+    global _QCT26
+    if _QCT26 is None:
+        _QCT26 = {r["tract_fips"]: r for r in load_csv("qct2026.csv")}
+    return _QCT26
+
+
+def qct25() -> dict[str, dict]:
+    global _QCT25
+    if _QCT25 is None:
+        _QCT25 = {r["tract_fips"]: r for r in load_csv("qct2025.csv")}
+    return _QCT25
+
+
+def dda_zcta() -> dict[str, list[dict]]:
+    global _DDA_ZCTA
+    if _DDA_ZCTA is None:
+        idx: dict[str, list[dict]] = {}
+        for r in load_plain("dda_metro_zcta.csv"):
+            idx.setdefault(r["zcta"], []).append(r)
+        _DDA_ZCTA = idx
+    return _DDA_ZCTA
+
+
+def dda_nm() -> list[dict]:
+    global _DDA_NM
+    if _DDA_NM is None:
+        _DDA_NM = load_plain("dda_nonmetro_counties.csv")
+    return _DDA_NM
+
+
+def norm_tract(s: str) -> str:
+    t = re.sub(r"\D", "", s or "")
+    if len(t) == 10:
+        t = "0" + t
+    if len(t) != 11:
+        raise SystemExit(f"--qct needs an 11-digit 2020 census tract FIPS, got {s!r}")
+    return t
+
+
+def norm_zcta(s: str) -> str:
+    t = re.sub(r"\D", "", s or "")
+    if len(t) != 5:
+        raise SystemExit(f"--zcta needs a 5-digit ZCTA, got {s!r}")
+    return t
+
+
+def qct_status(tract: str) -> dict:
+    t = norm_tract(tract)
+    in26 = t in qct26()
+    in25 = t in qct25()
+    row = qct26().get(t) or qct25().get(t) or {}
+    if in26:
+        label = "QCT-2026"
+        note = "HUD 2026 QCT (eff 2026-01-01). IRC 42(d)(5)(B)(ii) 30% eligible-basis boost may apply to new construction/rehab. Not land. Not a rent increase."
+    elif in25:
+        label = "LOST-2025-QCT"
+        note = "On the 2025 QCT list, not 2026. Grandfather only if a binding commitment / allocation was made while the 2025 designation applied (HUD 2026 QCT/DDA notice, 90 FR 46904, Sept 30 2025). Not a determination."
+    else:
+        label = "not-QCT"
+        note = "Tract is not on HUD 2026 or 2025 QCT lists."
+    return {
+        "tract_fips": t,
+        "qct_2026": int(in26),
+        "qct_2025": int(in25),
+        "qct_label": label,
+        "stcnty": row.get("stcnty", t[:5]),
+        "cbsa": row.get("cbsa", ""),
+        "tract": row.get("tract", ""),
+        "note": note,
+    }
+
+
+def zcta_dda_status(zcta: str) -> dict:
+    z = norm_zcta(zcta)
+    hits = dda_zcta().get(z, [])
+    split = any(h.get("split") == "1" for h in hits)
+    if hits:
+        areas = "; ".join(f"{h['stusps']} {h['area']}" for h in hits)
+        note = "HUD 2026 metropolitan Small DDA (ZCTA). IRC 42(d)(5)(B)(iii) 30% eligible-basis boost may apply."
+        if split:
+            note += " Split ZCTA — confirm the project side on HUD SADDA locator; ZIP ≠ ZCTA."
+        label = "DDA-2026-ZCTA"
+    else:
+        areas = ""
+        note = "ZCTA is not on the HUD 2026 metropolitan DDA list (2,615 ZCTA rows)."
+        label = "not-metro-DDA"
+    return {
+        "zcta": z,
+        "dda_metro": int(bool(hits)),
+        "dda_split": int(split),
+        "dda_areas": areas,
+        "dda_label": label,
+        "note": note,
+        "hit_n": len(hits),
+    }
+
+
+def county_nm_dda(row: dict) -> dict | None:
+    st = (row.get("stusps") or "").upper()
+    name = (row.get("County_Name") or row.get("county_town_name") or "").strip().lower()
+    name = name.replace("á", "a").replace("í", "i").replace("é", "e")
+    for r in dda_nm():
+        if r["stusps"] != st:
+            continue
+        c = r["county_name"].strip().lower()
+        if c == name or c.replace(" county", "") == name.replace(" county", ""):
+            return r
+    return None
+
+
+def basis_boost_from(qct: dict | None, zcta: dict | None, nm: dict | None) -> dict:
+    reasons = []
+    if qct and qct["qct_2026"]:
+        reasons.append("QCT-2026 " + qct["tract_fips"])
+    if zcta and zcta["dda_metro"]:
+        reasons.append("metro-DDA ZCTA " + zcta["zcta"])
+    if nm:
+        reasons.append("nonmetro-DDA " + nm["county_name"] + " " + nm["stusps"])
+    ok = bool(reasons)
+    return {
+        "boost_eligible_planning": int(ok),
+        "boost_factor": BASIS_BOOST if ok else 1.0,
+        "boost_reasons": "; ".join(reasons) if reasons else "none",
+        "boost_note": (
+            "30% eligible-basis boost (IRC 42(d)(5)(B)(i)) — new construction and rehab only, not land, not 42(g)(2) rents. HFA still decides."
+            if ok
+            else "No 2026 QCT / metro DDA ZCTA / nonmetro DDA county match."
+        ),
+    }
 
 
 def ia_by_fips() -> dict[str, dict]:
@@ -360,7 +505,57 @@ def cmd_watch() -> None:
     print("  rent-restricted = 30% of IRC 42(g)(2)(C) imputed IL / 12")
     print("  HERA Special is 2007/2008 PIS only. Rural floor is IRC 42(i)(8).")
     print("  hold-harmless: --floor-il (42(g)(2)(A)). UA ladder: --ua-ladder (26 CFR 1.42-10).")
+    print(f"  QCT 2026 tracts {len(qct26()):,}  QCT 2025 tracts {len(qct25()):,}  lost {len(set(qct25())-set(qct26())):,}  gained {len(set(qct26())-set(qct25())):,}")
+    print(f"  metro DDA ZCTAs {sum(len(v) for v in dda_zcta().values()):,}  nonmetro DDA counties {len(dda_nm()):,}")
+    print("  30% eligible-basis boost: --qct / --zcta / --boost (IRC 42(d)(5)(B)). Does not raise rents.")
     print("  not an HFA determination")
+
+
+def cmd_lost_qct(state: str | None, n: int = 25) -> None:
+    lost = [r for t, r in qct25().items() if t not in qct26()]
+    if state:
+        st = state.upper()
+        # map usps via MTSP
+        fips_st = {r["fips"][:2]: r["stusps"] for r in limits()}
+        want = None
+        for fp, usps in fips_st.items():
+            if usps == st:
+                want = fp
+                break
+        if want:
+            lost = [r for r in lost if r["statefp"] == want]
+        print(f"2025 QCTs not on the 2026 list" + (f" in {st}" if state else "") + f"  n={len(lost):,}")
+    else:
+        print(f"2025 QCTs not on the 2026 list  n={len(lost):,}")
+    print("Grandfather is a binding-commitment fact, not this table. Showing first rows:")
+    for r in lost[:n]:
+        print(f"  {r['tract_fips']}  stcnty {r['stcnty']}  tract {r['tract']}  cbsa {r['cbsa']}")
+
+
+def cmd_qct(tract: str) -> None:
+    s = qct_status(tract)
+    print(f"tract {s['tract_fips']}  {s['qct_label']}")
+    print(f"  2026 QCT={s['qct_2026']}  2025 QCT={s['qct_2025']}  county FIPS {s['stcnty']}  cbsa {s['cbsa']}")
+    print(f"  {s['note']}")
+
+
+def cmd_zcta(zcta: str) -> None:
+    s = zcta_dda_status(zcta)
+    print(f"ZCTA {s['zcta']}  {s['dda_label']}")
+    if s["dda_areas"]:
+        print(f"  {s['dda_areas']}" + ("  SPLIT" if s["dda_split"] else ""))
+    print(f"  {s['note']}")
+
+
+def print_boost(qct: dict | None, zcta: dict | None, nm: dict | None, eligible_basis: int | None) -> None:
+    b = basis_boost_from(qct, zcta, nm)
+    print(f"42(d)(5)(B) planning boost  eligible={b['boost_eligible_planning']}  factor {b['boost_factor']}")
+    print(f"  reasons: {b['boost_reasons']}")
+    print(f"  {b['boost_note']}")
+    if eligible_basis is not None:
+        boosted = int(round(eligible_basis * b["boost_factor"]))
+        print(f"  eligible basis (user, excl land) {money(eligible_basis)}  → after 30% {money(boosted)}")
+        print("  credit amount still needs applicable percentage × boosted basis; desk does not invent AP.")
 
 
 def cmd_ua_ladder() -> None:
@@ -541,6 +736,11 @@ def main() -> None:
     p.add_argument("--mix", help='income-averaging mix, e.g. "2@30,6@60,2@80"')
     p.add_argument("--batch", type=Path)
     p.add_argument("--ua-ladder", action="store_true")
+    p.add_argument("--qct", help="11-digit 2020 census tract FIPS (HUD 2026/2025 QCT lists)")
+    p.add_argument("--zcta", help="5-digit 2020 ZCTA (HUD 2026 metro Small DDA list)")
+    p.add_argument("--boost", action="store_true", help="print IRC 42(d)(5)(B) 30% eligible-basis planning flag")
+    p.add_argument("--eligible-basis", type=int, help="user eligible basis dollars (excl land); scaled only if --boost hits")
+    p.add_argument("--lost-qct", nargs="?", const="", metavar="ST", help="list 2025 QCTs dropped in 2026 (optional state)")
     args = p.parse_args()
 
     if args.watch:
@@ -552,6 +752,9 @@ def main() -> None:
     if args.ua_ladder:
         cmd_ua_ladder()
         return
+    if args.lost_qct is not None:
+        cmd_lost_qct(args.lost_qct or None)
+        return
     if args.list:
         cmd_list(args.list)
         return
@@ -561,26 +764,55 @@ def main() -> None:
     if args.batch:
         cmd_batch(args.batch)
         return
-    if not args.county:
-        p.print_help()
-        raise SystemExit(2)
-    row = pick_county(find_counties(args.county, args.state), args.county)
-    if args.mix:
-        cmd_mix(row, args.mix, args.hera, args.rural)
+
+    qct = qct_status(args.qct) if args.qct else None
+    zcta = zcta_dda_status(args.zcta) if args.zcta else None
+
+    if args.qct and not args.county and not args.boost and not args.zcta:
+        cmd_qct(args.qct)
         return
-    q = quote_row(
-        row,
-        args.br,
-        args.ami,
-        args.hera,
-        args.rural,
-        args.ua,
-        args.asking,
-        floor_il=args.floor_il,
-        ua_method=args.ua_method,
-        s8_hap=args.s8_hap,
-    )
-    print_quote(q)
+    if args.zcta and not args.county and not args.boost and not args.qct:
+        cmd_zcta(args.zcta)
+        return
+
+    row = None
+    nm = None
+    if args.county:
+        row = pick_county(find_counties(args.county, args.state), args.county)
+        nm = county_nm_dda(row)
+        if args.mix:
+            cmd_mix(row, args.mix, args.hera, args.rural)
+            if args.boost or args.qct or args.zcta:
+                print()
+                print_boost(qct, zcta, nm, args.eligible_basis)
+            return
+        q = quote_row(
+            row,
+            args.br,
+            args.ami,
+            args.hera,
+            args.rural,
+            args.ua,
+            args.asking,
+            floor_il=args.floor_il,
+            ua_method=args.ua_method,
+            s8_hap=args.s8_hap,
+        )
+        print_quote(q)
+        if nm:
+            print(f"  nonmetro DDA county: {nm['county_name']} {nm['stusps']} (HUD 2026 DDA2026NM)")
+
+    if args.qct:
+        cmd_qct(args.qct)
+    if args.zcta:
+        cmd_zcta(args.zcta)
+    if args.boost or args.eligible_basis is not None:
+        print_boost(qct, zcta, nm, args.eligible_basis)
+        return
+    if row is not None:
+        return
+    p.print_help()
+    raise SystemExit(2)
 
 
 if __name__ == "__main__":
