@@ -13,6 +13,8 @@ No network. No API keys. Planning only — not an HFA / 8609 determination.
   python3 desk/quote.py --list CA
   python3 desk/quote.py --hera-areas 15
   python3 desk/quote.py --rules
+  python3 desk/quote.py --ua-ladder
+  python3 desk/quote.py --county Autauga --state AL --br 2 --ami 60 --floor-il 54000 --ua-method PHA
 """
 
 from __future__ import annotations
@@ -28,6 +30,18 @@ DATA = ROOT / "data"
 
 AMIS = (20, 30, 40, 50, 60, 70, 80)
 PERSONS = (1, 2, 3, 4, 5, 6, 7, 8)
+UA_METHODS = (
+    "RHS",
+    "RHS-TENANT",
+    "HUD-REG",
+    "PHA-S8",
+    "PHA-DEFAULT",
+    "COMPANY",
+    "AGENCY",
+    "HUSM",
+    "ENERGY",
+    "SUBMETER",
+)
 
 # IRC 42(g)(2)(C): 0 BR → 1 person; n BR → 1.5 n persons.
 # Fractional persons use the midpoint of the two HUD household-size columns.
@@ -245,7 +259,18 @@ def hera_ok(row: dict, hera: bool) -> None:
         )
 
 
-def quote_row(row: dict, br: int, ami: int, hera: bool, rural: bool, ua: int, asking: int | None) -> dict:
+def quote_row(
+    row: dict,
+    br: int,
+    ami: int,
+    hera: bool,
+    rural: bool,
+    ua: int,
+    asking: int | None,
+    floor_il: int | None = None,
+    ua_method: str | None = None,
+    s8_hap: int = 0,
+) -> dict:
     if br not in BR_PERSONS:
         raise SystemExit("--br must be 0–6")
     if ami not in AMIS:
@@ -254,6 +279,14 @@ def quote_row(row: dict, br: int, ami: int, hera: bool, rural: bool, ua: int, as
     ia = ia_by_fips().get(row["fips"])
     persons = BR_PERSONS[br]
     annual, src = il_for_persons(row, ia, persons, ami, hera, rural)
+    held = 0
+    if floor_il is not None:
+        if floor_il > annual:
+            annual = floor_il
+            src = f"hold-harmless 42(g)(2)(A) floor-il {floor_il} > FY2026"
+            held = 1
+        else:
+            src = f"{src}; floor-il {floor_il} does not bind"
     mx = monthly_max(annual)
     tenant_cap = mx - ua
     out = {
@@ -272,16 +305,22 @@ def quote_row(row: dict, br: int, ami: int, hera: bool, rural: bool, ua: int, as
         "rural": int(rural),
         "annual_il": annual,
         "il_source": src,
+        "hold_harmless": held,
+        "floor_il": floor_il if floor_il is not None else "",
         "monthly_max_gross": mx,
         "ua": ua,
+        "ua_method": ua_method or "",
+        "s8_hap": s8_hap,
         "tenant_rent_cap": tenant_cap,
         "asking": asking if asking is not None else "",
     }
     if asking is not None:
+        # 42(g)(2)(B)(i): Section 8 / comparable HAP is not gross rent.
         gross = asking + ua
         out["asking_gross"] = gross
         out["over_max"] = int(gross > mx)
         out["headroom"] = mx - gross
+        out["hap_excluded_from_gross"] = s8_hap
     return out
 
 
@@ -294,9 +333,15 @@ def print_quote(q: dict) -> None:
         + ("  rural-floor" if q["rural"] else "")
     )
     print(f"  annual imputed IL {money(q['annual_il'])}  ({q['il_source']})")
+    if q.get("hold_harmless"):
+        print("  HOLD-HARMLESS binds (IRC 42(g)(2)(A) 2d sentence) — not a BIN/8609 determination")
     print(f"  42(g)(2) monthly gross max {money(q['monthly_max_gross'])}  (30% / 12, truncated)")
-    if q["ua"]:
-        print(f"  minus UA {money(q['ua'])} → tenant rent cap {money(q['tenant_rent_cap'])}")
+    if q["ua"] or q.get("ua_method"):
+        method = q.get("ua_method") or "unspecified"
+        print(f"  minus UA {money(q['ua'])}  method={method}  → tenant rent cap {money(q['tenant_rent_cap'])}")
+        print("  UA excludes telephone/cable/internet (26 CFR 1.42-10(a)); new UA hits rents due in 90 days (c)(1)")
+    if q.get("s8_hap"):
+        print(f"  Section 8 HAP {money(q['s8_hap'])} excluded from gross rent (42(g)(2)(B)(i))")
     if q["asking"] != "":
         flag = "OVER" if q["over_max"] else "ok"
         print(
@@ -314,7 +359,23 @@ def cmd_watch() -> None:
     print(f"  effective 2026-05-01  national non-metro 4p VLI {money(parse_int(nn['vli_4']))}")
     print("  rent-restricted = 30% of IRC 42(g)(2)(C) imputed IL / 12")
     print("  HERA Special is 2007/2008 PIS only. Rural floor is IRC 42(i)(8).")
+    print("  hold-harmless: --floor-il (42(g)(2)(A)). UA ladder: --ua-ladder (26 CFR 1.42-10).")
     print("  not an HFA determination")
+
+
+def cmd_ua_ladder() -> None:
+    path = DATA / "ua_methods.csv"
+    if not path.exists():
+        raise SystemExit("missing data/ua_methods.csv")
+    print("26 CFR 1.42-10 applicable utility allowance — first matching rung wins")
+    print("Telephone, cable television, and Internet are never UA (1.42-10(a)).")
+    print()
+    with path.open(encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            print(f"{r['priority']:>2}  {r['method']:12}  {r['cite']}")
+            print(f"    when: {r['when']}")
+            print(f"    desk: {r['desk']}")
+            print()
 
 
 def cmd_rules() -> None:
@@ -473,9 +534,13 @@ def main() -> None:
     p.add_argument("--hera", action="store_true")
     p.add_argument("--rural", action="store_true")
     p.add_argument("--ua", type=int, default=0)
+    p.add_argument("--ua-method", choices=UA_METHODS, help="26 CFR 1.42-10 rung (does not invent a dollar UA)")
+    p.add_argument("--s8-hap", type=int, default=0, help="Section 8 HAP excluded from gross rent (42(g)(2)(B)(i))")
+    p.add_argument("--floor-il", type=int, help="prior-year imputed IL; hold-harmless if higher than FY2026")
     p.add_argument("--asking", type=int)
     p.add_argument("--mix", help='income-averaging mix, e.g. "2@30,6@60,2@80"')
     p.add_argument("--batch", type=Path)
+    p.add_argument("--ua-ladder", action="store_true")
     args = p.parse_args()
 
     if args.watch:
@@ -483,6 +548,9 @@ def main() -> None:
         return
     if args.rules:
         cmd_rules()
+        return
+    if args.ua_ladder:
+        cmd_ua_ladder()
         return
     if args.list:
         cmd_list(args.list)
@@ -500,7 +568,18 @@ def main() -> None:
     if args.mix:
         cmd_mix(row, args.mix, args.hera, args.rural)
         return
-    q = quote_row(row, args.br, args.ami, args.hera, args.rural, args.ua, args.asking)
+    q = quote_row(
+        row,
+        args.br,
+        args.ami,
+        args.hera,
+        args.rural,
+        args.ua,
+        args.asking,
+        floor_il=args.floor_il,
+        ua_method=args.ua_method,
+        s8_hap=args.s8_hap,
+    )
     print_quote(q)
 
 
