@@ -16,11 +16,13 @@ Row counts in this pack: **4,764** county/town rows in each MTSP file (header ex
 
 ## Statute / rule cites (rent math)
 
-- [26 U.S.C. § 42(g)(2)](https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title26-section42) — rent-restricted = gross rent ≤ 30% of imputed income limitation; 0 BR → 1 person; ≥1 BR → 1.5 persons per bedroom; hold-harmless vs first year in the project.
+- [26 U.S.C. § 42(g)(2)](https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title26-section42) — rent-restricted = gross rent ≤ 30% of imputed income limitation; 0 BR → 1 person; ≥1 BR → 1.5 persons per bedroom; hold-harmless vs first year in the project. `--floor-il` takes max(FY2026, prior imputed IL).
 - [26 U.S.C. § 42(g)(1)](https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title26-section42) — 20-50 / 40-60 / income averaging.
 - [26 U.S.C. § 42(i)(8)](https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title26-section42) — rural: greater of area median or national non-metropolitan median.
+- [26 CFR § 1.42-10](https://www.law.cornell.edu/cfr/text/26/1.42-10) — applicable UA ladder (RHS → RHS-tenant → HUD-regulated → PHA-S8 → PHA default / company / agency / HUSM / energy). Telephone/cable/internet never UA. New UA hits rents due 90 days after the change ((c)(1)); annual owner review ((c)(2)). Submetering ((e)): admin fee ≤ $5/mo (or state cap) is not gross rent. Section 8 HAP is excluded from gross rent (42(g)(2)(B)(i)).
 - HUD USER: 60% MTSP = 120% of the 50% (very-low) limit. Do **not** take 60% of median family income directly (too many HUD exceptions).
 - HERA Special columns are **only** for buildings placed in service in 2007 or 2008.
+- 45-day implement: HUD MTSP effective **2026-05-01**; LIHTC properties must use the new limits by **2026-06-15** (industry/HFA practice from the HUD release).
 
 ## What this desk does **not** do
 
