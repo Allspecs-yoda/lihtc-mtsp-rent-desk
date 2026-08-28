@@ -1,0 +1,11 @@
+priority,method,cite,when,desk
+1,RHS,26 CFR 1.42-10(b)(1),Building receives RHS assistance — UA for ALL rent-restricted units is the RHS schedule even if HUD tenants live there.,Pass --ua-method RHS and the RHS dollar UA via --ua. Do not mix PHA.
+2,RHS-TENANT,26 CFR 1.42-10(b)(2),Any tenant in the building receives RHS rental assistance — entire building uses RHS UA (including HUD-assisted units).,Pass --ua-method RHS-TENANT. One RHS tenant flips the building.
+3,HUD-REG,26 CFR 1.42-10(b)(3),No RHS building/tenant; HUD regulates rents and UAs (HUD-regulated building).,Pass --ua-method HUD-REG with the HUD schedule dollar via --ua.
+4,PHA-S8,26 CFR 1.42-10(b)(4)(i),Other buildings: unit occupied by a tenant receiving HUD tenant assistance (Section 8).,Pass --ua-method PHA-S8. PHA Existing Housing UA. HAP itself is excluded from gross rent (42(g)(2)(B)(i)); pass --s8-hap.
+5,PHA-DEFAULT,26 CFR 1.42-10(b)(4)(ii)(A),None of (b)(1)–(b)(4)(i) apply. Default is the applicable PHA UA unless an owner election below is in force.,Pass --ua-method PHA-DEFAULT.
+6,COMPANY,26 CFR 1.42-10(b)(4)(ii)(B),Local utility company written estimate for similar size/construction. Not available to (b)(1)–(b)(4)(i) units. Once obtained, applies to all similar rent-restricted units.,Pass --ua-method COMPANY. Owner must give the estimate to the Agency and tenants at the start of the 90-day period (c)(1).
+7,AGENCY,26 CFR 1.42-10(b)(4)(ii)(C),Allocating Agency written estimate. Consumption data 12 months ending no earlier than 60 days before the 90-day period; rates no older than 60 days.,Pass --ua-method AGENCY.
+8,HUSM,26 CFR 1.42-10(b)(4)(ii)(D),HUD Utility Schedule Model. Rates no older than 60 days before the 90-day period.,Pass --ua-method HUSM. Desk does not run HUSM; dollar still comes from --ua.
+9,ENERGY,26 CFR 1.42-10(b)(4)(ii)(E),Energy/water consumption model by a licensed engineer or Agency-approved qualified professional not related under 267(b)/707(b).,Pass --ua-method ENERGY.
+10,SUBMETER,26 CFR 1.42-10(e),Actual-consumption submetering: tenant billed actual use; owner rate ≤ incurred (or local max if renewable). Admin fee ≤ greater of $5/mo or state cap is not gross rent.,Pass --ua-method SUBMETER. Submetered cost is treated as paid by the tenant so UA still applies; fee itself is not UA.
